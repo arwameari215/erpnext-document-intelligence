@@ -52,7 +52,10 @@ const apiRequest = async (endpoint, method = 'GET', body = null) => {
 
     // Check for errors
     if (!response.ok) {
-      const errorMessage = data.exception || data.message || data._server_messages || 'Unknown error';
+      let errorMessage = data.exception || data.message || data._server_messages || 'Unknown error';
+      
+      // Strip HTML tags from error message
+      errorMessage = errorMessage.replace(/<[^>]*>/g, '');
       
       // Check for exchange rate errors
       if (errorMessage.toLowerCase().includes('exchange rate') || 
