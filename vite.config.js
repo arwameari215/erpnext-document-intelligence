@@ -7,8 +7,13 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/upload': {
-        target: 'http://localhost:8000', // Update with your API server URL
+        target: 'http://localhost:8000',
         changeOrigin: true,
+      },
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
       }
     }
   }

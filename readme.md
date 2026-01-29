@@ -1,351 +1,237 @@
 # ERPNext Document Intelligence UI
 
-A modern, responsive frontend UI for processing and managing PDF documents (Invoices and Purchase Orders) with Document Intelligence capabilities for ERPNext.
+A modern React application for processing PDF documents (Purchase Orders and Invoices) with intelligent data extraction and direct ERPNext integration.
 
 ## Features
 
-- **Document Type Selection**: Choose between Invoice and Purchase Order processing
-- **PDF Upload**: Secure PDF file upload with validation
-- **Intelligent Parsing**: Automatic extraction of document data via API integration
-- **Editable Forms**: Review and edit extracted data with highlighted missing fields
-- **Line Items Management**: Editable tables for invoice/PO items with automatic calculations
-- **Validation**: Built-in field validation before confirmation
-- **Responsive Design**: Clean, ERP-style interface that works on all devices
+- **PDF Document Processing**: Upload and parse Purchase Order and Invoice PDFs
+- **Intelligent Data Extraction**: Automatic field extraction via API integration
+- **Editable Forms**: Review and edit extracted data with validation
+- **Direct ERPNext Integration**: Submit Purchase Orders directly to ERPNext
+- **Multi-Currency Support**: Handle multiple currencies with exchange rates
+- **Real-time Status Updates**: Live feedback during ERPNext submission
+- **Automatic Entity Creation**: Creates Company, Supplier, and Items if not in ERPNext
+- **Responsive Design**: Clean, modern UI that works on all devices
 
 ## Tech Stack
 
-- **React 18** - Modern UI framework
-- **Vite** - Fast build tool and dev server
-- **Tailwind CSS** - Utility-first CSS framework
-- **Axios** - HTTP client for API requests
+- React 18 + Vite
+- Tailwind CSS
+- ERPNext REST API
+- Axios for HTTP requests
+
+## Quick Start
+
+### 1. Install Dependencies
+
+```bash
+npm install
+```
+
+### 2. Configure Environment
+
+Create `.env` file with your ERPNext credentials:
+
+```env
+# Leave empty to use Vite proxy (recommended for development)
+VITE_ERPNEXT_URL=
+
+# ERPNext API Credentials (get from ERPNext → User Profile → API Access)
+VITE_ERPNEXT_API_KEY=your_api_key_here
+VITE_ERPNEXT_API_SECRET=your_api_secret_here
+```
+
+### 3. Start Development Server
+
+```bash
+npm run dev
+```
+
+Application runs at `http://localhost:3000`
+
+## Getting ERPNext API Credentials
+
+1. Login to ERPNext (default: `http://localhost:8080`)
+2. Go to User Profile → API Access
+3. Click "Generate Keys"
+4. Copy API Key and API Secret to `.env` file
+5. Restart dev server
+
+## Usage
+
+### Processing Purchase Orders
+
+1. Select "Purchase Order" from document type dropdown
+2. Upload PDF file
+3. Click "Upload & Process"
+4. Review extracted data:
+   - Supplier Name
+   - Company Name  
+   - Order Date
+   - Delivery Date
+   - Currency
+   - Line Items
+5. Edit any fields as needed
+6. Add/remove items using table controls
+7. Click "Submit to ERPNext"
+8. View success message with ERPNext PO number
+
+### What Happens When You Submit
+
+1. **Validates** all required fields
+2. **Checks/Creates** Company in ERPNext
+3. **Checks/Creates** Supplier in ERPNext
+4. **Checks/Creates** Items in ERPNext (one per line item)
+5. **Creates** Purchase Order in ERPNext
+6. **Submits** Purchase Order (sets docstatus = 1)
+7. **Returns** ERPNext PO number with direct link
+
+## Configuration
+
+### Vite Proxy Setup
+
+The application uses Vite's proxy to avoid CORS issues:
+
+```javascript
+// vite.config.js
+server: {
+  proxy: {
+    '/api': {
+      target: 'http://localhost:8080',  // ERPNext URL
+      changeOrigin: true,
+    }
+  }
+}
+```
+
+Leave `VITE_ERPNEXT_URL` empty in `.env` to use the proxy.
+
+### Warehouse Configuration
+
+Items require a warehouse. Default is `'Stores - MC'`. To change:
+
+```javascript
+// src/services/erpnextService.js
+warehouse: item.warehouse || 'Your-Warehouse-Name'
+```
+
+Find warehouse names in ERPNext → Stock → Warehouse
+
+## Validation Rules
+
+- **Supplier Name**: Required
+- **Company Name**: Required  
+- **Order Date**: Required
+- **Delivery Date**: Required, must be ≥ order date and ≥ today
+- **Currency**: Required
+- **Items**: At least one required
+  - Item Code: Required
+  - Description: Required
+  - Quantity: Must be > 0
+  - Unit Price: Cannot be negative
+
+## Troubleshooting
+
+### "Exchange rate not configured"
+
+Add exchange rate in ERPNext:
+- Go to Setup → Currency Exchange
+- Add rate for your currency
+
+### "Warehouse is mandatory for stock Item"
+
+Item is marked as stock item in ERPNext. Either:
+1. Update warehouse in `erpnextService.js`
+2. Change item to non-stock in ERPNext
+
+### "Network error: Failed to fetch"
+
+1. Verify ERPNext is running: `curl http://localhost:8080/api/method/ping`
+2. Ensure `.env` has empty `VITE_ERPNEXT_URL` to use proxy
+3. Restart dev server
+
+### "API credentials not configured"
+
+1. Check `.env` file exists with credentials
+2. Restart dev server (required after .env changes)
 
 ## Project Structure
 
 ```
-erpnext-document-intelligence/
-├── src/
-│   ├── components/
-│   │   ├── InvoiceForm.jsx       # Invoice preview and editing component
-│   │   └── PurchaseOrderForm.jsx # Purchase Order preview and editing component
-│   ├── App.jsx                    # Main application component
-│   ├── App.css                    # Global styles
-│   └── main.jsx                   # Application entry point
-├── index.html                     # HTML template
-├── package.json                   # Dependencies and scripts
-├── vite.config.js                 # Vite configuration
-├── tailwind.config.js             # Tailwind CSS configuration
-└── postcss.config.js              # PostCSS configuration
+src/
+├── components/
+│   ├── InvoiceForm.jsx          # Invoice form component
+│   └── PurchaseOrderForm.jsx    # Purchase Order form with ERPNext integration
+├── services/
+│   └── erpnextService.js        # ERPNext REST API integration
+├── App.jsx                      # Main application
+└── main.jsx                     # Entry point
+
+vite.config.js                   # Vite configuration with proxy
+.env                             # Environment variables (not in git)
+.env.example                     # Template for .env
 ```
-
-## Installation
-
-### Frontend Setup
-
-1. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-
-2. **Configure API endpoint** (optional):
-   Edit `vite.config.js` to update the proxy target to your API server URL:
-   ```javascript
-   proxy: {
-     '/upload': {
-       target: 'http://localhost:5000', // Update with your API URL
-       changeOrigin: true,
-     }
-   }
-   ```
-
-### Python/ERPNext Integration Setup
-
-1. **Install Python dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. **Configure ERPNext API credentials**:
-   ```bash
-   # Copy the example environment file
-   cp .env.example .env
-   
-   # Edit .env and add your ERPNext credentials
-   ```
-   
-   Update the [.env](.env) file with your actual ERPNext details:
-   ```env
-   ERPNEXT_BASE_URL=http://your-erpnext-instance:8080
-   ERPNEXT_API_KEY=your_api_key_here
-   ERPNEXT_API_SECRET=your_api_secret_here
-   ERPNEXT_DEFAULT_COMPANY=Your Company Name
-   ERPNEXT_DEFAULT_SUPPLIER=Your Supplier Name
-   ```
-
-3. **Generate ERPNext API Keys**:
-   - Login to your ERPNext instance
-   - Go to User → Your Profile
-   - Click on "API Access"
-   - Generate API Key and Secret
-   - Copy them to your [.env](.env) file
-
-**⚠️ Security Note**: Never commit your `.env` file to version control. It's already added to [.gitignore](.gitignore).
-     '/upload': {
-       target: 'http://localhost:5000', // Update with your API URL
-       changeOrigin: true,
-     }
-   }
-   ```
-
-## Running the Application
-
-### Frontend Development Mode
-```bash
-npm run dev
-```
-The application will start at `http://localhost:3000`
-
-### Test ERPNext Integration
-```bash
-# Test the ERPNext API connection and create a sample PO
-python create_po_erpnext.py
-```
-
-This will:
-- Validate your ERPNext credentials
-- Create test Company, Supplier, and Item
-- Create a sample Purchase Order
-- Display success/error messages
-
-### Production Build
-```bash
-npm run build
-```
-
-### Preview Production Build
-```bash
-npm run preview
-```
-
-## Usage
-
-### User Flow
-
-1. **Select Document Type**
-   - Choose either "Invoice" or "Purchase Order" from the dropdown
-   - Upload button becomes enabled
-
-2. **Upload PDF**
-   - Click "Choose PDF File" to select your document
-   - Only PDF files are accepted
-   - Selected filename is displayed
-
-3. **Process Document**
-   - Click "Upload & Process"
-   - API processes the document based on type:
-     - Invoice → `POST /upload/invoice`
-     - Purchase Order → `POST /upload/po`
-
-4. **Review & Edit**
-   - Extracted data is displayed in editable forms
-   - Missing/null fields are highlighted in yellow
-   - Edit any fields as needed
-   - Modify line items (quantities, rates, amounts)
-
-5. **Confirm**
-   - Click "Confirm & Continue"
-   - Data is validated
-   - Success message is displayed
-   - Data is prepared for ERPNext upload (integration pending)
 
 ## API Integration
 
-### ERPNext Integration
+### ERPNext Endpoints Used
 
-The [create_po_erpnext.py](create_po_erpnext.py) script handles data ingestion to ERPNext:
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/api/resource/Company/{name}` | Check company exists |
+| POST | `/api/resource/Company` | Create company |
+| GET | `/api/resource/Supplier/{name}` | Check supplier exists |
+| POST | `/api/resource/Supplier` | Create supplier |
+| GET | `/api/resource/Item/{code}` | Check item exists |
+| POST | `/api/resource/Item` | Create item |
+| POST | `/api/resource/Purchase Order` | Create purchase order |
+| PUT | `/api/resource/Purchase Order/{name}` | Submit purchase order |
 
-**Schema Mapping**:
-- Form data from `PurchaseOrderForm.jsx` is automatically mapped to ERPNext Purchase Order schema
-- The `map_form_to_erpnext()` function handles field transformations:
-  - `po_number` → `naming_series`
-  - `date` → `transaction_date`
-  - `delivery_date` → `schedule_date`
-  - `supplier_name` → `supplier`
-  - `company_name` → `company`
-  - `items[].description` → `items[].item_name`
-  - `items[].quantity` → `items[].qty`
-  - `items[].unit_price` → `items[].rate`
+### Authentication
 
-**Usage in Code**:
-```python
-from create_po_erpnext import create_purchase_order_from_form
+All requests include:
 
-# Your form data from frontend
-form_data = {
-    "po_number": "PO-2026-001",
-    "date": "2026-01-28",
-    "delivery_date": "2026-02-15",
-    "supplier_name": "ABC Suppliers",
-    "company_name": "My Company",
-    "items": [
-        {
-            "description": "Office Chair",
-            "quantity": 5,
-            "unit_price": 150.00,
-            "total": 750.00
-        }
-    ]
-}
-
-# Create PO in ERPNext
-po = create_purchase_order_from_form(form_data, submit=True)
-print(f"Created PO: {po['name']}")
-```
-
-### Invoice API Response Structure
-```json
-{
-  "confidence": 0.85,
-  "data": {
-    "InvoiceId": "36259",
-    "VendorName": "SuperStore",
-    "InvoiceDate": "2012-03-06",
-    "BillingAddressRecipient": "Aaron Bergman",
-    "ShippingAddress": "98103, Seattle, Washington, United States",
-    "SubTotal": 53.82,
-    "ShippingCost": 4.29,
-    "InvoiceTotal": 58.11,
-    "Tax": null,
-    "Items": [
-      {
-        "description": "Newell 330",
-        "category": "Art, Office Supplies, OFF-AR-5309",
-        "quantity": 3,
-        "rate": 17.94,
-        "amount": 53.82
-      }
-    ]
-  },
-  "predictionTime": 7.067
-}
-```
-
-### Purchase Order API Response Structure
-```json
-{
-  "po_number": "36259",
-  "date": "2012-03-06",
-  "delivery_date": null,
-  "supplier_name": "SuperStore",
-  "company_name": "Aaron Bergman",
-  "total_amount": 58.11,
-  "status": "Pending",
-  "items": [
-    {
-      "description": "Newell 330 - Art, Office Supplies, OFF-AR-5309",
-      "quantity": 3.0,
-      "unit_price": 17.94,
-      "total": 53.82
-    }
-  ]
-}
-```
-
-## Components
-
-### App.jsx
-Main application component managing:
-- Document type selection
-- File upload
-- API communication
-- Component routing
-- State management
-
-### InvoiceForm.jsx
-Handles invoice document display and editing:
-- Confidence score display
-- Invoice details form (9 fields)
-- Items table with editable rows
-- Field validation
-- Null value highlighting
-
-### PurchaseOrderForm.jsx
-Handles purchase order display and editing:
-- Status badge display
-- PO details form (7 fields)
-- Items table with editable rows
-- Field validation
-- Delivery date highlighting
-
-## Customization
-
-### Styling
-- Edit `tailwind.config.js` for custom colors, fonts, etc.
-- Modify `src/App.css` for global styles
-- Component-specific styles use Tailwind utility classes
-
-### API Endpoints
-Update endpoints in `src/App.jsx`:
 ```javascript
-const endpoint = documentType === 'invoice' 
-  ? '/upload/invoice'  // Change endpoint here
-  : '/upload/po';      // Change endpoint here
+Authorization: token <API_KEY>:<API_SECRET>
+Content-Type: application/json
 ```
 
-### Validation Rules
-Modify validation in form components:
-```javascript
-// InvoiceForm.jsx or PurchaseOrderForm.jsx
-const handleConfirm = () => {
-  // Add custom validation logic here
-};
-```
+## Security Considerations
 
-## Future Enhancements
+⚠️ **Current Setup**: For local/development only
 
-- [ ] Add/Remove line items functionality
-- [ ] Document preview (PDF viewer)
-- [ ] Batch document processing
-- [ ] Export to CSV/Excel
-- [ ] Document history/audit trail
-- [ ] Multi-language support
-- [ ] Dark mode
-- [ ] Real-time sync with ERPNext webhooks
-- [ ] Duplicate detection
+**For Production**:
+- Implement backend API proxy
+- Store credentials server-side only
+- Use OAuth/JWT authentication
+- Enable HTTPS
+- Add rate limiting
+- Implement proper CORS policies
 
-## Documentation
-
-- 📖 [SETUP_GUIDE.md](SETUP_GUIDE.md) - Complete setup instructions for ERPNext integration
-- 🏗️ [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture and data flow diagrams
-- 📝 [example_form_integration.py](example_form_integration.py) - Working code example
-
-## Quick Start (ERPNext Integration)
+## Available Scripts
 
 ```bash
-# 1. Install dependencies
-pip install -r requirements.txt
-
-# 2. Configure credentials
-cp .env.example .env
-# Edit .env with your ERPNext credentials
-
-# 3. Test connection
-python create_po_erpnext.py
-
-# 4. Or use the setup script
-./setup.sh          # Linux/Mac
-.\setup.ps1         # Windows PowerShell
+npm run dev      # Start development server
+npm run build    # Build for production
+npm run preview  # Preview production build
 ```
 
-## Notes
+## Environment Variables
 
-- **ERPNext Integration**: The UI is prepared for ERPNext integration. The comment `// ERPNext integration will be added here later` marks where to add the actual API calls.
-- **Field Highlighting**: Yellow-highlighted fields indicate missing or null values that may need attention.
-- **Auto-calculation**: Line item amounts are automatically calculated when quantity or rate changes.
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `VITE_ERPNEXT_URL` | ERPNext base URL (empty for proxy) | `` |
+| `VITE_ERPNEXT_API_KEY` | ERPNext API key | `abc123...` |
+| `VITE_ERPNEXT_API_SECRET` | ERPNext API secret | `def456...` |
 
 ## License
 
-This project is part of the ERPNext Document Intelligence system.
+Part of the ERPNext Document Intelligence system.
 
 ## Support
 
-For issues or questions, please contact your system administrator or refer to the ERPNext documentation.
+For issues:
+1. Check browser console for errors
+2. Verify ERPNext is running
+3. Check ERPNext logs: `bench logs`
+4. Ensure API credentials are valid
