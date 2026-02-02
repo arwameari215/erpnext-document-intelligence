@@ -1,0 +1,4 @@
+# Playwright for browser automation
+playwright>=1.40.0
+
+# Python unittest is built-in, no extra dependencies needed
