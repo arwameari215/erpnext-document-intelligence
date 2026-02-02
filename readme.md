@@ -1,54 +1,44 @@
 # ERPNext Document Intelligence
 
-A complete document processing system for ERPNext with intelligent PDF extraction and automated document creation.
+A document processing web application for uploading and managing Purchase Orders and Sales Invoices.
 
 ## Overview
 
 This application consists of two main components:
-- **Frontend (React + Vite)**: Modern UI for uploading PDFs and managing document data
-- **Backend (Python + FastAPI)**: PDF parsing, data extraction, and ERPNext integration
+- **Frontend (React + Next.js)**: Modern UI for uploading PDFs and managing document data
+- **Backend (Python + Flask)**: PDF file handling and mock data generation
 
 ## Features
 
 ### Document Processing
-- **PDF Upload & Parsing**: Extract data from Purchase Order and Invoice PDFs
-- **AI-Powered Extraction**: Claude API for intelligent field recognition
-- **Editable Forms**: Review and modify extracted data before submission
-- **Validation**: Client and server-side validation for data integrity
-
-### ERPNext Integration
-- **Automated Workflows**: Complete document creation from PDF to submitted ERPNext document
-- **Entity Management**: Automatic creation of Company, Supplier, Customer, and Items
-- **Multi-Currency Support**: Handle multiple currencies with exchange rate validation
-- **Real-time Status**: Live feedback during ERPNext submission process
-- **Document Submission**: Direct submission to ERPNext with proper docstatus
+- **PDF Upload**: Upload Purchase Order and Sales Invoice PDFs
+- **Mock Data Generation**: Backend returns structured mock data for testing
+- **Editable Forms**: Review and modify document data in user-friendly forms
+- **Validation**: Client-side validation for data integrity
 
 ### Architecture
-- **Secure**: API credentials stored server-side only
-- **Scalable**: Backend API handles all business logic
+- **Simple**: Lightweight Flask backend for quick prototyping
 - **Modern**: React frontend with Tailwind CSS styling
 - **RESTful**: Clean API design with proper error handling
+- **No External Dependencies**: Works standalone without ERPNext or AI services
 
 ## Tech Stack
 
 ### Frontend
-- React 18 + Vite
+- React 18 + Next.js 14 (App Router)
 - Tailwind CSS
-- Axios for HTTP requests
+- Fetch API for HTTP requests
 
 ### Backend
 - Python 3.10+
-- FastAPI
-- Anthropic Claude API
-- ERPNext REST API integration
+- Flask
+- Flask-CORS
 
 ## Installation & Setup
 
 ### Prerequisites
 - Node.js 16+ and npm
 - Python 3.10+
-- ERPNext instance running (default: http://localhost:8080)
-- Claude API key for PDF extraction
 
 ### 1. Clone Repository
 
@@ -67,47 +57,20 @@ npm install
 ### 3. Backend Setup
 
 ```bash
-# Navigate to backend directory
-cd backend
-
-# Create virtual environment (optional but recommended)
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
 # Install dependencies
-pip install -r requirements.txt
+pip install flask flask-cors
 
-# Configure environment variables
-cp .env.example .env
-# Edit .env with your credentials:
-# - ANTHROPIC_API_KEY (Claude API)
-# - ERPNEXT_URL (default: http://localhost:8080)
-# - ERPNEXT_API_KEY
-# - ERPNEXT_API_SECRET
+# No environment variables or configuration needed
 ```
 
-### 4. ERPNext API Credentials
-
-1. Login to your ERPNext instance (http://localhost:8080)
-2. Go to: User Menu → My Settings → API Access
-3. Click "Generate Keys"
-4. Copy the API Key and API Secret
-5. Add them to backend `.env` file:
-   ```env
-   ERPNEXT_API_KEY=your_generated_api_key
-   ERPNEXT_API_SECRET=your_generated_api_secret
-   ```
-
-### 5. Start Services
+### 4. Start Services
 
 **Terminal 1 - Backend API:**
 ```bash
-cd backend
-python -m uvicorn main:app --reload --port 8000
+python api_server.py
 ```
 
 Backend will start at: http://localhost:8000
-- API docs: http://localhost:8000/docs
 - Health check: http://localhost:8000/health
 
 **Terminal 2 - Frontend:**
@@ -116,14 +79,6 @@ npm run dev
 ```
 
 Frontend will start at: http://localhost:3000
-
-### 6. Test Connection
-
-```bash
-npm run test:erpnext
-```
-
-This verifies backend is running and connected to ERPNext.
 
 ## How It Works
 
@@ -137,84 +92,65 @@ This verifies backend is running and connected to ERPNext.
          │ HTTP
          ↓
 ┌─────────────────┐
-│  React Frontend │
+│ Next.js Frontend│
 │  - Upload UI    │
 │  - Form Editor  │
 │  - Validation   │
+│  - API Proxy    │
 └────────┬────────┘
-         │ REST API (/upload, /erpnext)
+         │ REST API (proxied)
          ↓
 ┌─────────────────┐
-│  FastAPI Backend│
+│  Flask Backend  │
 │  (Port 8000)    │
-│  - PDF Parsing  │
-│  - Claude AI    │
-│  - ERPNext API  │
+│  - File Handling│
+│  - Mock Data    │
 └────────┬────────┘
-         │ REST API
-         ├──────────────┬──────────────┐
-         ↓              ↓              ↓
-┌──────────────┐ ┌─────────────┐ ┌──────────────┐
-│ Claude API   │ │ ERPNext API │ │ File Storage │
-│ (Text Extr.) │ │ (Port 8080) │ │ (temp files) │
-└──────────────┘ └─────────────┘ └──────────────┘
+         │
+         ↓
+┌──────────────┐
+│ File Storage │
+│ (uploads/)   │
+└──────────────┘
 ```
 
 ### Request Flow
 
-#### Purchase Order Submission:
+#### Purchase Order Processing:
 
 1. **Upload Phase**
    ```
    User uploads PDF → Frontend → POST /upload/po → Backend
-   Backend extracts data using Claude API
-   Backend returns structured JSON with PO fields
+   Backend saves file and returns mock structured data
    Frontend displays editable form
    ```
 
-2. **Submission Phase**
+2. **Form Editing**
    ```
-   User clicks "Submit to ERPNext" → Frontend → POST /erpnext/purchase-order → Backend
-   
-   Backend workflow:
-   ├─ Validate all required fields
-   ├─ Check/Create Company in ERPNext
-   ├─ Check/Create Supplier in ERPNext
-   ├─ Check/Create all Items in ERPNext
-   ├─ Create Purchase Order (draft)
-   ├─ Submit Purchase Order (docstatus=1)
-   └─ Return PO number to Frontend
-   
-   Frontend displays success message with ERPNext link
+   User reviews and edits:
+   - PO Number, Dates
+   - Supplier and Company information
+   - Line items (description, quantity, price)
+   Frontend validates data client-side
    ```
 
-#### Sales Invoice Submission:
+#### Sales Invoice Processing:
 
 1. **Upload Phase**
    ```
    User uploads PDF → Frontend → POST /upload/invoice → Backend
-   Backend extracts data using Claude API
-   Backend returns structured JSON with invoice fields
-   Frontend fetches company details via GET /erpnext/company/{name}
+   Backend saves file and returns mock structured data
    Frontend displays editable form
    ```
 
-2. **Submission Phase**
+2. **Form Editing**
    ```
-   User clicks "Submit to ERPNext" → Frontend → POST /erpnext/sales-invoice → Backend
-   
-   Backend workflow:
-   ├─ Validate all required fields (dates, amounts, etc.)
-   ├─ Check/Create Company in ERPNext
-   ├─ Check/Create Customer in ERPNext
-   ├─ Check/Create all Items in ERPNext
-   ├─ Create Sales Invoice with shipping (draft)
-   ├─ Submit Sales Invoice (docstatus=1)
-   └─ Return Invoice number to Frontend
-   
-   Frontend displays success message
-   ```
-
+   User reviews and edits:
+   - Invoice ID, Dates
+   - Customer and vendor information
+   - Line items (description, quantity, price)
+   - Shipping and tax details
+   Frontend validates data client-side
 ## Usage Guide
 
 ### Processing Purchase Orders
@@ -225,25 +161,20 @@ This verifies backend is running and connected to ERPNext.
 2. **Upload PDF**
    - Click "Choose File" and select your PO PDF
    - Click "Upload & Process"
-   - Backend extracts data using Claude AI
+   - Backend generates mock PO data
 
 3. **Review Extracted Data**
-   - Supplier Name
-   - Company Name
+   - PO Number
+   - Supplier Name & Company Name
    - Order Date & Delivery Date
-   - Currency
-   - Line Items (Item Code, Description, Quantity, Price)
+   - Total Amount & Status
+   - Line Items (Description, Quantity, Unit Price, Total)
 
 4. **Edit as Needed**
-   - Modify any fields
+   - Modify any fields in the form
    - Add/remove line items using the table controls
    - Update quantities or prices
-
-5. **Submit to ERPNext**
-   - Click "Submit to ERPNext"
-   - Watch real-time status messages
-   - Receive ERPNext PO number on success
-   - Click link to view in ERPNext
+   - All changes are local (no backend submission)
 
 ### Processing Sales Invoices
 
@@ -253,323 +184,243 @@ This verifies backend is running and connected to ERPNext.
 2. **Upload PDF**
    - Click "Choose File" and select your invoice PDF
    - Click "Upload & Process"
-   - Backend extracts data using Claude AI
+   - Backend generates mock invoice data
 
 3. **Review Extracted Data**
-   - Invoice ID & Customer Name
-   - Company Name (with auto-detection)
-   - Invoice Date & Due Date
-   - Currency & Shipping Cost
-   - Line Items with amounts
+   - Invoice ID & Vendor Name
+   - Customer Name & Billing Address
+   - Invoice Date & Shipping Address
+   - Subtotal, Shipping Cost, Tax, Total
+   - Line Items (Description, Category, Quantity, Rate, Amount)
 
 4. **Edit as Needed**
    - Modify customer information
-   - Update dates (Due Date must be ≥ Invoice Date)
+   - Update dates and addresses
    - Edit line items
-   - Update shipping cost
-
-5. **Submit to ERPNext**
-   - Click "Submit to ERPNext"
-   - Watch real-time status messages
-   - Receive ERPNext Invoice number on success
+   - Update shipping cost and tax
+   - All changes are local (no backend submission)
 
 ### What Happens Behind the Scenes
 
 **During Upload:**
 - Frontend sends PDF to backend `/upload/po` or `/upload/invoice`
-- Backend saves file temporarily
-- Claude API extracts structured data from PDF text
-- Backend returns JSON with all fields
-- Frontend populates form
-- Temporary file is deleted
-
-**During Submission:**
-- Frontend validates all required fields
-- Frontend sends data to backend `/erpnext/purchase-order` or `/erpnext/sales-invoice`
-- Backend performs "create-if-not-exists" workflow:
-  1. Check Company exists → Create if not
-  2. Check Supplier/Customer exists → Create if not
-  3. Check each Item exists → Create if not
-  4. Create document in draft mode (docstatus=0)
-  5. Submit document (docstatus=1)
-- Backend returns document number
-- Frontend displays success with ERPNext link
+- Backend saves file to `uploads/` folder with timestamp
+- Backend generates mock structured data matching form schema
+- Backend returns JSON with all fields populated
+- Frontend populates form with received data
+- File remains stored in `uploads/` directory
 
 ## Configuration Details
 
-### Frontend Configuration (Vite)
+### Frontend Configuration (Next.js)
 
-**Development Server:** Port 3000  
-**Proxy Configuration:** `vite.config.js` routes API calls through Vite proxy to avoid CORS:
+**Development Server:** Port 3000 (default Next.js port)  
+**API Proxy Configured:** Backend requests are proxied through Next.js rewrites
 
+**Services Configuration:**
+Services make relative API calls (proxied to backend by Next.js):
 ```javascript
-// vite.config.js
-server: {
-  proxy: {
-    '/upload': {
-      target: 'http://localhost:8000',  // Backend API
-      changeOrigin: true,
-    },
-    '/erpnext': {
-      target: 'http://localhost:8000',  // Backend API
-      changeOrigin: true,
-    }
-  }
-}
+// API calls like '/upload/invoice' are automatically proxied to http://localhost:8000
 ```
 
-**Why Relative URLs?**  
-Services use `BACKEND_API_URL = ''` (empty string) to create relative URLs like `/upload/po` and `/erpnext/purchase-order`. Requests automatically go through Vite proxy in development.
+**Next.js Configuration (next.config.js):**
+```javascript
+module.exports = {
+  async rewrites() {
+    return [
+      {
+        source: '/upload/:path*',
+        destination: 'http://localhost:8000/upload/:path*',
+      },
+      {
+        source: '/erpnext/:path*',
+        destination: 'http://localhost:8000/erpnext/:path*',
+      },
+    ];
+  },
+};
+```
 
-**No Frontend Authentication:**  
-All ERPNext credentials removed from frontend. No `.env.local` needed.
+**No Authentication Required:**  
+No environment variables, API keys, or credentials needed.
 
-### Backend Configuration (FastAPI)
+### Backend Configuration (Flask)
 
 **Development Server:** Port 8000  
-**Environment Variables:** Required in backend `.env` file:
+**No Environment Variables Required**
 
-```env
-# ERPNext Configuration (Required)
-ERPNEXT_BASE_URL=http://localhost:8080
-ERPNEXT_API_KEY=your_api_key_here
-ERPNEXT_API_SECRET=your_api_secret_here
-
-# Claude AI Configuration (Required)
-ANTHROPIC_API_KEY=your_claude_api_key_here
-
-# CORS Configuration (Optional)
-ALLOWED_ORIGINS=http://localhost:3000
-
-# Upload Configuration (Optional)
-MAX_FILE_SIZE=10485760  # 10MB default
-UPLOAD_DIR=./uploads    # Temporary storage
+**Configuration:**
+```python
+# Flask app configuration
+UPLOAD_FOLDER = 'uploads'
+MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
 ```
 
-**How to Get ERPNext Credentials:**
-1. Log into ERPNext as Administrator
-2. Go to User doctype → Find your user
-3. Click "API Access" → Generate Keys
-4. Copy API Key and API Secret to backend `.env`
+**CORS:**  
+CORS is enabled for all origins using Flask-CORS:
+```python
+from flask_cors import CORS
+CORS(app)
+```
 
-**Security Notes:**
-- API Key/Secret never leave the backend
-- Frontend makes authenticated requests via backend proxy
-- CORS limited to `ALLOWED_ORIGINS` only
-
-### Warehouse Configuration
-
-Items require a warehouse. Backend automatically assigns based on company abbreviation:
-- Company: "My Company" (abbr: "MC")
-- Warehouse: "Stores - MC"
-
-To customize, update backend warehouse logic.
+**File Storage:**
+- Uploaded files are saved to `uploads/` directory
+- Files are named with timestamp: `invoice_YYYYMMDD_HHMMSS_originalname.pdf`
+- Files persist after upload (not deleted automatically)
 
 ## Validation Rules
 
 ### Purchase Order Validation
-- **Supplier Name**: Required
-- **Company Name**: Required  
-- **Order Date**: Required
-- **Delivery Date**: Required, must be ≥ order date and ≥ today
-- **Currency**: Required
+- **PO Number**: Required (client-side)
+- **Supplier Name**: Required (client-side)
+- **Company Name**: Required (client-side)
+- **Order Date**: Required (client-side)
+- **Delivery Date**: Required (client-side)
+- **Total Amount**: Calculated from items
 - **Items**: At least one required
-  - Item Code: Required
   - Description: Required
   - Quantity: Must be > 0
-  - Unit Price: Cannot be negative
+  - Unit Price: Must be ≥ 0
 
 ### Sales Invoice Validation
-- **Customer Name**: Required
-- **Company Name**: Required
-- **Invoice Date**: Required
-- **Due Date**: Required, must be ≥ invoice date
-- **Currency**: Required
+- **Invoice ID**: Required (client-side)
+- **Vendor Name**: Required (client-side)
+- **Customer Name**: Required (client-side)
+- **Invoice Date**: Required (client-side)
+- **Billing Address**: Required (client-side)
+- **Shipping Address**: Required (client-side)
 - **Items**: At least one required
-  - Item Code: Required
   - Description: Required
   - Quantity: Must be > 0
-  - Amount: Cannot be negative
+  - Rate: Must be ≥ 0
 
 ## Troubleshooting
 
 ### Frontend Issues
 
-**Problem:** "Network error: Failed to fetch"  
+**Problem:** "Failed to fetch" or network error  
 **Solutions:**
 1. Verify backend is running on port 8000
-2. Check Vite dev server is running on port 3000
-3. Ensure `vite.config.js` proxy configuration is correct
-4. Check browser console for detailed error messages
+2. Check that backend URL is correct (`http://localhost:8000`)
+3. Check browser console for detailed error messages
+4. Ensure CORS is enabled in Flask backend
 
-**Problem:** CORS errors or OPTIONS 405  
+**Problem:** File upload fails  
 **Solutions:**
-1. Use relative URLs in services (not `http://localhost:8000`)
-2. Verify Vite proxy routes `/upload` and `/erpnext` to backend
-3. Restart Vite dev server: `npm run dev`
+1. Verify file is a valid PDF
+2. Check file size is under 16MB
+3. Ensure `uploads/` directory exists and is writable
+4. Check backend terminal for error messages
 
-**Problem:** Form validation errors  
+**Problem:** Form not populating after upload  
 **Solutions:**
-1. Check all required fields are filled
-2. Verify dates are in correct format (YYYY-MM-DD)
-3. Ensure quantities/prices are positive numbers
-4. Check Due Date ≥ Invoice Date
+1. Check browser console for JavaScript errors
+2. Verify backend response format matches expected schema
+3. Check network tab to see actual response data
 
 ### Backend Issues
 
-**Problem:** "ERPNext API credentials not configured"  
+**Problem:** "Address already in use" error  
 **Solutions:**
-1. Create backend `.env` file with credentials
-2. Copy from `.env.example` template
-3. Verify `ERPNEXT_API_KEY` and `ERPNEXT_API_SECRET` are set
-4. Restart backend server
+1. Another process is using port 8000
+2. Find and kill the process: `netstat -ano | findstr :8000` (Windows)
+3. Or use a different port: `app.run(port=8001)`
 
-**Problem:** "Could not connect to ERPNext"  
+**Problem:** Import errors (flask, flask_cors not found)  
 **Solutions:**
-1. Verify ERPNext is running: `curl http://localhost:8080/api/method/ping`
-2. Check `ERPNEXT_BASE_URL` in backend `.env`
-3. Test credentials: `node test-erpnext-connection.js`
-4. Check ERPNext logs for API errors
+1. Install dependencies: `pip install flask flask-cors`
+2. Verify Python environment is activated if using venv
 
-**Problem:** "Claude API error"  
+**Problem:** File not found errors  
 **Solutions:**
-1. Verify `ANTHROPIC_API_KEY` in backend `.env`
-2. Check API key is valid and has credits
-3. Ensure PDF text extraction is working
-4. Check backend logs for detailed error
-
-### ERPNext Issues
-
-**Problem:** "Exchange rate not configured"  
-**Solutions:**
-1. Go to ERPNext: Setup → Currency Exchange
-2. Add exchange rate for your currency to company default currency
-3. Set valid from/to dates
-
-**Problem:** "Warehouse is mandatory for stock Item"  
-**Solutions:**
-1. Verify warehouse exists: "Stores - {company_abbr}"
-2. Check item is marked as stock item
-3. Update warehouse logic in backend if needed
-
-**Problem:** "Company/Supplier/Customer not found"  
-**Solutions:**
-1. Backend creates entities automatically
-2. Check ERPNext Chart of Accounts is set up
-3. Verify default Price List exists
-4. Check ERPNext logs for creation errors
-
-**Problem:** "Permission denied"  
-**Solutions:**
-1. Verify API user has correct permissions
-2. Check user roles include: Purchase Manager, Sales Manager, Stock User
-3. Ensure API access is enabled for user
-
-### Testing Connection
-
-Run the test script to verify full connectivity:
-
-```bash
-node test-erpnext-connection.js
-```
-
-This tests: Frontend → Backend → ERPNext API chain.
-
-Expected output:
-```
-Testing ERPNext connection via backend...
-✓ Backend is responding
-✓ Successfully connected to ERPNext!
-ERPNext system ready.
-```
+1. Ensure `uploads/` directory exists
+2. Check file permissions
+3. Create directory manually if needed
 
 ## Project Structure
 
 ```
 erpnext-document-intelligence/
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── InvoiceForm.jsx           # Sales Invoice form UI
-│   │   │   └── PurchaseOrderForm.jsx     # Purchase Order form UI
-│   │   ├── services/
-│   │   │   ├── erpnextService.js         # PO backend API client
-│   │   │   └── erpnextSalesInvoiceService.js  # Invoice backend API client
-│   │   ├── App.jsx                       # Main application component
-│   │   ├── App.css                       # Application styles
-│   │   ├── main.jsx                      # Entry point
-│   │   └── index.css                     # Global styles with Tailwind
-│   ├── index.html                        # HTML template
-│   ├── vite.config.js                    # Vite config with proxy setup
-│   ├── tailwind.config.js                # Tailwind CSS config
-│   ├── postcss.config.js                 # PostCSS config
-│   ├── package.json                      # Frontend dependencies
-│   └── test-erpnext-connection.js        # Backend API test script
-│
-├── backend/                              # FastAPI backend (separate repo/folder)
-│   ├── api_server.py                     # Main FastAPI server
-│   ├── .env                              # Backend environment variables (not in git)
-│   ├── .env.example                      # Backend .env template
-│   ├── requirements.txt                  # Python dependencies
-│   └── uploads/                          # Temporary PDF storage
-│
-├── tests/                                # E2E test suite
-│   ├── test_invoice_integration.py       # Live ERPNext integration tests
-│   ├── test_invoice_mocked.py            # Mocked API tests
-│   ├── config.py                         # Test configuration
-│   ├── requirements.txt                  # Test dependencies
-│   ├── run_integration_tests.bat         # Windows integration test runner
-│   ├── run_integration_tests.sh          # Unix integration test runner
-│   ├── run_mocked_tests.bat              # Windows mocked test runner
-│   ├── run_mocked_tests.sh               # Unix mocked test runner
-│   ├── page_objects/                     # Page Object Model
-│   │   ├── base_page.py                  # Base page class
-│   │   ├── home_page.py                  # Home page object
-│   │   └── invoice_form_page.py          # Invoice form page object
+├── src/
+│   ├── components/
+│   │   ├── InvoiceForm.jsx           # Sales Invoice form UI
+│   │   └── PurchaseOrderForm.jsx     # Purchase Order form UI
+│   ├── services/
+│   │   ├── erpnextPurchaseOrderService.js  # PO backend API client
+│   │   └── erpnextSalesInvoiceService.js   # Invoice backend API client
+│   ├── App.jsx                       # Main application component
+│   ├── App.css                       # Application styles
+│   └── main.jsx                      # Entry point
+├── tests/                            # E2E test suite (Selenium)
+│   ├── test_invoice_integration.py   # Integration tests
+│   ├── test_invoice_mocked.py        # Mocked API tests
+│   ├── test_po_mocked.py             # PO mocked tests
+│   ├── config.py                     # Test configuration
+│   ├── requirements.txt              # Test dependencies
+│   ├── mock_api_server.py            # Mock backend for testing
+│   ├── page_objects/                 # Page Object Model
+│   │   ├── base_page.py
+│   │   ├── home_page.py
+│   │   ├── invoice_form_page.py
+│   │   └── purchase_order_form_page.py
 │   └── utils/
-│       └── api_checker.py                # API validation utilities
-│
-├── docs/                                 # Documentation
-│   ├── ERPNEXT_INTEGRATION_SPEC.md       # Complete API specification
-│   ├── FRONTEND_REFACTORING_SUMMARY.md   # Refactoring documentation
-│   └── CODE_CLEANUP_SUMMARY.md           # Cleanup history
-│
-└── readme.md                             # This file
+│       └── api_checker.py            # API validation utilities
+├── uploads/                          # PDF storage directory
+├── api_server.py                     # Flask backend server
+├── next.config.js                    # Next.js configuration
+├── tailwind.config.js                # Tailwind CSS config
+├── postcss.config.js                 # PostCSS config
+├── package.json                      # Frontend dependencies
+├── app/                              # Next.js App Router directory
+│   ├── layout.js                     # Root layout
+│   ├── page.js                       # Main page (home)
+│   └── globals.css                   # Global styles
+├── components/                       # React components (shared)
+│   ├── InvoiceForm.jsx
+│   └── PurchaseOrderForm.jsx
+├── services/                         # API service clients
+│   ├── erpnextSalesInvoiceService.js
+│   └── erpnextPurchaseOrderService.js
+└── readme.md                         # This file
 ```
 
 ### Key Files Explained
 
-**Frontend Services:**
-- `erpnextService.js`: Handles PO upload and submission to backend
-- `erpnextSalesInvoiceService.js`: Handles invoice upload and submission to backend
-- Both use relative URLs (`''`) to work with Vite proxy
+**Frontend:**
+- [app/page.js](app/page.js): Main application page with document type selection and file upload
+- [app/layout.js](app/layout.js): Root layout with metadata and global styles
+- [components/InvoiceForm.jsx](components/InvoiceForm.jsx): Sales invoice form with validation
+- [components/PurchaseOrderForm.jsx](components/PurchaseOrderForm.jsx): Purchase order form with validation
+- [services/erpnextPurchaseOrderService.js](services/erpnextPurchaseOrderService.js): HTTP client for PO endpoints
+- [services/erpnextSalesInvoiceService.js](services/erpnextSalesInvoiceService.js): HTTP client for invoice endpoints
+
+**Backend:**
+- [api_server.py](api_server.py): Flask server with upload endpoints and mock data generation
 
 **Configuration:**
-- `vite.config.js`: Proxy `/upload` and `/erpnext` to backend (port 8000)
-- Backend `.env`: Contains ERPNext and Claude API credentials
-- No frontend `.env` needed (all authentication on backend)
+- [next.config.js](next.config.js): Next.js configuration with API rewrites
+- [tailwind.config.js](tailwind.config.js): Tailwind CSS customization
+- [package.json](package.json): NPM dependencies and scripts
 
 **Testing:**
-- `test-erpnext-connection.js`: Quick connectivity test
-- `tests/`: Full E2E test suite with Selenium + page objects
+- [tests/](tests/): Complete E2E test suite using Selenium WebDriver
+- [tests/mock_api_server.py](tests/mock_api_server.py): Standalone mock backend for testing
 
 ## API Reference
 
 ### Backend API Endpoints
 
-All endpoints require backend authentication (handled internally with ERPNext credentials).
-
 #### Upload Endpoints
 
 **POST `/upload/po`**  
-Upload and extract Purchase Order data from PDF.
+Upload Purchase Order PDF and receive mock data.
 
 Request:
 ```javascript
 const formData = new FormData();
 formData.append('file', pdfFile);
 
-fetch('/upload/po', {
+fetch('http://localhost:8000/upload/po', {
   method: 'POST',
   body: formData
 });
@@ -578,32 +429,34 @@ fetch('/upload/po', {
 Response:
 ```json
 {
-  "supplier_name": "ABC Suppliers Ltd",
-  "company": "My Company",
-  "order_date": "2024-01-15",
-  "delivery_date": "2024-02-15",
-  "currency": "USD",
+  "po_number": "PO-2026-001",
+  "date": "2026-02-01",
+  "delivery_date": "2026-02-15",
+  "supplier_name": "ABC Suppliers Inc",
+  "company_name": "My Company",
+  "total_amount": 1520.00,
+  "status": "Pending",
   "items": [
     {
-      "item_code": "ITEM-001",
-      "description": "Product Description",
-      "quantity": 10,
-      "uom": "Nos",
-      "unit_price": 50.00
+      "description": "Ergonomic Office Chair",
+      "quantity": 5,
+      "unit_price": 150.00,
+      "total": 750.00
     }
-  ]
+  ],
+  "filename": "po_20260201_120000_original.pdf"
 }
 ```
 
 **POST `/upload/invoice`**  
-Upload and extract Sales Invoice data from PDF.
+Upload Sales Invoice PDF and receive mock data.
 
 Request:
 ```javascript
 const formData = new FormData();
 formData.append('file', pdfFile);
 
-fetch('/upload/invoice', {
+fetch('http://localhost:8000/upload/invoice', {
   method: 'POST',
   body: formData
 });
@@ -612,156 +465,61 @@ fetch('/upload/invoice', {
 Response:
 ```json
 {
-  "invoice_id": "INV-2024-001",
-  "customer_name": "Customer Corp",
-  "company": "My Company",
-  "invoice_date": "2024-01-15",
-  "due_date": "2024-02-15",
-  "currency": "USD",
-  "shipping_cost": 25.00,
-  "items": [
-    {
-      "item_code": "ITEM-001",
-      "description": "Product Description",
-      "quantity": 5,
-      "amount": 250.00
-    }
-  ]
+  "confidence": 0.85,
+  "data": {
+    "InvoiceId": "INV-2026-001",
+    "VendorName": "Sample Vendor Inc",
+    "InvoiceDate": "2026-02-01",
+    "BillingAddressRecipient": "John Doe",
+    "ShippingAddress": "123 Main St, City, State 12345",
+    "SubTotal": 1000.00,
+    "ShippingCost": 50.00,
+    "InvoiceTotal": 1100.00,
+    "Tax": 50.00,
+    "Items": [
+      {
+        "description": "Sample Product 1",
+        "category": "Category A",
+        "quantity": 2,
+        "rate": 300.00,
+        "amount": 600.00
+      }
+    ]
+  },
+  "predictionTime": 2.5,
+  "filename": "invoice_20260201_120000_original.pdf"
 }
 ```
 
-#### Submission Endpoints
+#### Health Check Endpoints
 
-**POST `/erpnext/purchase-order`**  
-Create and submit Purchase Order to ERPNext.
+**GET `/health`**  
+Check backend server health.
 
-Request:
+Response:
 ```json
 {
-  "supplier_name": "ABC Suppliers Ltd",
-  "company": "My Company",
-  "order_date": "2024-01-15",
-  "delivery_date": "2024-02-15",
-  "currency": "USD",
-  "items": [
-    {
-      "item_code": "ITEM-001",
-      "description": "Product Description",
-      "quantity": 10,
-      "uom": "Nos",
-      "unit_price": 50.00
-    }
-  ]
+  "status": "healthy",
+  "service": "Document Intelligence API",
+  "timestamp": "2026-02-01T12:00:00"
 }
 ```
 
-Response (Success):
+**GET `/`**  
+Get API information and available endpoints.
+
+Response:
 ```json
 {
-  "message": "Purchase Order created successfully",
-  "po_number": "PO-2024-00001",
-  "po_url": "http://localhost:8080/app/purchase-order/PO-2024-00001"
+  "service": "ERPNext Document Intelligence API",
+  "version": "1.0.0",
+  "endpoints": {
+    "/upload/invoice": "POST - Upload and process invoice PDF",
+    "/upload/po": "POST - Upload and process purchase order PDF",
+    "/health": "GET - Health check"
+  }
 }
 ```
-
-Response (Error):
-```json
-{
-  "detail": "Error message describing what went wrong"
-}
-```
-
-**POST `/erpnext/sales-invoice`**  
-Create and submit Sales Invoice to ERPNext.
-
-Request:
-```json
-{
-  "invoice_id": "INV-2024-001",
-  "customer_name": "Customer Corp",
-  "company": "My Company",
-  "invoice_date": "2024-01-15",
-  "due_date": "2024-02-15",
-  "currency": "USD",
-  "shipping_cost": 25.00,
-  "items": [
-    {
-      "item_code": "ITEM-001",
-      "description": "Product Description",
-      "quantity": 5,
-      "amount": 250.00
-    }
-  ]
-}
-```
-
-Response (Success):
-```json
-{
-  "message": "Sales Invoice created successfully",
-  "invoice_number": "SINV-2024-00001",
-  "invoice_url": "http://localhost:8080/app/sales-invoice/SINV-2024-00001"
-}
-```
-
-**GET `/erpnext/test-connection`**  
-Test backend connectivity to ERPNext.
-
-Response (Success):
-```json
-{
-  "status": "success",
-  "message": "Successfully connected to ERPNext",
-  "erpnext_url": "http://localhost:8080"
-}
-```
-
-### Backend Workflow (Automatic)
-
-When you submit a Purchase Order or Sales Invoice, the backend automatically:
-
-1. **Validates** all required fields
-2. **Creates Company** if it doesn't exist
-3. **Creates Supplier/Customer** if they don't exist
-4. **Creates each Item** if it doesn't exist
-5. **Creates Document** in draft mode (docstatus=0)
-6. **Submits Document** (docstatus=1)
-7. **Returns** document number and URL
-
-All entity creation is idempotent - existing entities are not duplicated.
-
-## Security & Production Notes
-
-### Current Architecture (Development)
-- **Secure:** All ERPNext credentials stored on backend only
-- **CORS Handled:** Vite proxy eliminates CORS issues in development
-- **No Credential Exposure:** Frontend has zero access to API keys/secrets
-
-### Production Deployment Checklist
-
-**Backend:**
-- [ ] Use environment variables (never commit `.env`)
-- [ ] Enable HTTPS with valid SSL certificate
-- [ ] Configure `ALLOWED_ORIGINS` to your frontend domain only
-- [ ] Add rate limiting to prevent abuse
-- [ ] Implement request logging and monitoring
-- [ ] Use secure file storage (not local disk)
-- [ ] Set up proper error handling without leaking details
-
-**Frontend:**
-- [ ] Build with `npm run build`
-- [ ] Serve static files via CDN or web server
-- [ ] Update API URLs to production backend
-- [ ] Remove Vite proxy (not needed in production)
-- [ ] Enable CSP headers for XSS protection
-- [ ] Minify and compress assets
-
-**ERPNext:**
-- [ ] Use dedicated API user with minimal permissions
-- [ ] Rotate API keys regularly
-- [ ] Enable API rate limiting in ERPNext
-- [ ] Monitor API usage for anomalies
-- [ ] Back up data regularly
 
 ## Testing
 
@@ -769,45 +527,37 @@ All entity creation is idempotent - existing entities are not duplicated.
 
 1. **Start Services:**
    ```bash
-   # Terminal 1: Start ERPNext
-   cd frappe-bench && bench start
+   # Terminal 1: Start backend
+   python api_server.py
    
-   # Terminal 2: Start backend
-   cd backend && python api_server.py
-   
-   # Terminal 3: Start frontend
+   # Terminal 2: Start frontend
    npm run dev
    ```
 
-2. **Test Connection:**
-   ```bash
-   node test-erpnext-connection.js
-   ```
-
-3. **Test UI:**
+2. **Test Application:**
    - Open http://localhost:3000
-   - Upload sample PDF
-   - Verify data extraction
-   - Submit to ERPNext
-   - Verify in ERPNext UI
+   - Select document type (PO or Invoice)
+   - Upload any PDF file
+   - Verify mock data appears in form
+   - Edit fields as needed
+   - Verify validation works
 
 ### Automated Testing
 
-**Integration Tests** (requires live ERPNext):
+The project includes E2E tests using Selenium WebDriver:
+
+**Run Tests:**
 ```bash
 cd tests
-run_integration_tests.bat    # Windows
-./run_integration_tests.sh   # Unix/Mac
+pip install -r requirements.txt
+python run_tests.py
 ```
 
-**Mocked Tests** (no ERPNext needed):
-```bash
-cd tests
-run_mocked_tests.bat          # Windows
-./run_mocked_tests.sh         # Unix/Mac
-```
-
-Tests use Selenium WebDriver with Page Object Model pattern.
+Tests verify:
+- File upload functionality
+- Form population with mock data
+- Client-side validation
+- UI interactions
 
 ## Available Scripts
 
@@ -817,41 +567,44 @@ Tests use Selenium WebDriver with Page Object Model pattern.
 npm install          # Install dependencies
 npm run dev          # Start development server (port 3000)
 npm run build        # Build for production
-npm run preview      # Preview production build
-npm run lint         # Run ESLint
+npm run start        # Start production server (port 3000)
 ```
 
 ### Backend
 
 ```bash
-pip install -r requirements.txt    # Install Python dependencies
-python api_server.py               # Start FastAPI server (port 8000)
+pip install flask flask-cors    # Install Python dependencies
+python api_server.py            # Start Flask server (port 8000)
 ```
 
 ### Testing
 
 ```bash
-node test-erpnext-connection.js    # Test backend API connectivity
-cd tests && run_integration_tests.bat    # Run E2E tests (Windows)
-cd tests && ./run_integration_tests.sh   # Run E2E tests (Unix/Mac)
-cd tests && run_mocked_tests.bat         # Run mocked tests (Windows)
-cd tests && ./run_mocked_tests.sh        # Run mocked tests (Unix/Mac)
+cd tests
+pip install -r requirements.txt # Install test dependencies
+python run_tests.py             # Run E2E tests
 ```
 
-## Documentation
+## Future Enhancements
 
-- **[ERPNEXT_INTEGRATION_SPEC.md](docs/ERPNEXT_INTEGRATION_SPEC.md)** - Complete API specification and workflow documentation
-- **[FRONTEND_REFACTORING_SUMMARY.md](docs/FRONTEND_REFACTORING_SUMMARY.md)** - History of frontend refactoring from direct ERPNext to backend API
-- **[CODE_CLEANUP_SUMMARY.md](docs/CODE_CLEANUP_SUMMARY.md)** - Documentation of code cleanup and legacy code removal
+This is a prototype/demo application. Potential enhancements include:
 
-## Support & Troubleshooting
+- **AI Integration**: Add Claude API or Azure Document Intelligence for real PDF parsing
+- **ERPNext Integration**: Connect to actual ERPNext instance for document creation
+- **Database**: Add persistence layer for uploaded documents
+- **Authentication**: Add user authentication and authorization
+- **File Management**: Implement file cleanup, preview, and download features
+- **Advanced Validation**: Server-side validation and business rule enforcement
+- **Real-time Updates**: WebSocket support for live processing status
+- **Multi-tenancy**: Support multiple companies/organizations
 
-For issues:
-1. Check browser console for frontend errors
-2. Check backend terminal for FastAPI errors
-3. Check ERPNext logs: `bench logs` (if using Frappe Bench)
-4. Verify connectivity: `node test-erpnext-connection.js`
-5. Review ERPNext API documentation: https://frappeframework.com/docs/user/en/api
+## Support
+
+For issues or questions:
+- Check the [Troubleshooting](#troubleshooting) section
+- Review browser console for frontend errors
+- Check backend terminal for Flask errors
+- Verify both services are running on correct ports
 
 ## License
 
