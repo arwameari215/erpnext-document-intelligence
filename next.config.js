@@ -1,4 +1,8 @@
 /** @type {import('next').NextConfig} */
+
+// Backend URL - configurable via environment variable for CI
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+
 const nextConfig = {
   // Enable React strict mode
   reactStrictMode: true,
@@ -8,11 +12,11 @@ const nextConfig = {
     return [
       {
         source: '/upload/:path*',
-        destination: 'http://localhost:8000/upload/:path*',
+        destination: `${BACKEND_URL}/upload/:path*`,
       },
       {
         source: '/erpnext/:path*',
-        destination: 'http://localhost:8000/erpnext/:path*',
+        destination: `${BACKEND_URL}/erpnext/:path*`,
       },
     ];
   },
