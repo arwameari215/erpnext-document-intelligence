@@ -1,10 +1,11 @@
+'use client';
+
 import React, { useState } from 'react';
 import axios from 'axios';
-import InvoiceForm from './components/InvoiceForm';
-import PurchaseOrderForm from './components/PurchaseOrderForm';
-import './App.css';
+import InvoiceForm from '../components/InvoiceForm';
+import PurchaseOrderForm from '../components/PurchaseOrderForm';
 
-function App() {
+export default function Home() {
   const [documentType, setDocumentType] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileName, setFileName] = useState('');
@@ -248,5 +249,3 @@ function App() {
     </div>
   );
 }
-
-export default App;

@@ -1,5 +1,7 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
-import { submitPurchaseOrderToERPNext } from '../services/erpnextService';
+import { submitPurchaseOrderToERPNext } from '../services/erpnextPurchaseOrderService';
 
 function PurchaseOrderForm({ data, onConfirm, onCancel }) {
   const [formData, setFormData] = useState({
@@ -536,4 +538,3 @@ function PurchaseOrderForm({ data, onConfirm, onCancel }) {
 }
 
 export default PurchaseOrderForm;
-
