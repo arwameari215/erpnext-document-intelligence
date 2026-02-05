@@ -1,4 +1,9 @@
 # Playwright for browser automation
 playwright>=1.40.0
 
-# Python unittest is built-in, no extra dependencies needed
+# Pytest as test runner (for Allure integration)
+pytest>=7.4.0
+pytest-playwright>=0.4.0
+
+# Allure reporting
+allure-pytest>=2.13.0
