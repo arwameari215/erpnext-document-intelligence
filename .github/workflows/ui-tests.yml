@@ -155,10 +155,30 @@ jobs:
           path: allure-report/
           retention-days: 30
 
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: allure-report/
+
+  deploy-report:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: generate-report
+    if: always() && github.ref == 'refs/heads/main'
+    
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
   test-summary:
     name: Test Summary
     runs-on: ubuntu-latest
-    needs: generate-report
+    needs: [generate-report, deploy-report]
     if: always()
 
     steps:
@@ -181,4 +201,5 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📊 Allure Report" >> $GITHUB_STEP_SUMMARY
           echo "View the full Allure report:" >> $GITHUB_STEP_SUMMARY
+          echo "- **🌐 GitHub Pages**: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/" >> $GITHUB_STEP_SUMMARY
           echo "- **Artifacts**: Download 'allure-report' from workflow artifacts" >> $GITHUB_STEP_SUMMARY
