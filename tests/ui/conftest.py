@@ -167,13 +167,13 @@ def stubbed_page(page: Page) -> Page:
     return page
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def base_url() -> str:
     """Returns the base URL for the application."""
     return BASE_URL
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def invoice_pdf() -> str:
     """Returns the path to the sample invoice PDF fixture."""
     return INVOICE_PDF
