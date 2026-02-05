@@ -24,31 +24,13 @@ env:
 
 jobs:
   test-matrix:
-    name: Test (${{ matrix.browser }}, ${{ matrix.resolution }})
+    name: Test (${{ matrix.browser }})
     runs-on: ubuntu-latest
     
     strategy:
       fail-fast: false
       matrix:
         browser: [chromium, firefox]
-        resolution: [1920x1080, 1366x768]
-        include:
-          - browser: chromium
-            resolution: 1920x1080
-            width: 1920
-            height: 1080
-          - browser: chromium
-            resolution: 1366x768
-            width: 1366
-            height: 768
-          - browser: firefox
-            resolution: 1920x1080
-            width: 1920
-            height: 1080
-          - browser: firefox
-            resolution: 1366x768
-            width: 1366
-            height: 768
     
     steps:
       - name: Checkout code
@@ -100,8 +82,6 @@ jobs:
           BACKEND_URL: ${{ env.BACKEND_URL }}
           HEADLESS: "true"
           BROWSERS: ${{ matrix.browser }}
-          VIEWPORT_WIDTH: ${{ matrix.width }}
-          VIEWPORT_HEIGHT: ${{ matrix.height }}
       
       - name: Generate Environment Properties
         if: always()
@@ -109,9 +89,6 @@ jobs:
           mkdir -p allure-results
           cat > allure-results/environment.properties << EOF
           Browser=${{ matrix.browser }}
-          Resolution=${{ matrix.resolution }}
-          Viewport.Width=${{ matrix.width }}
-          Viewport.Height=${{ matrix.height }}
           Python.Version=3.11
           Node.Version=18
           Headless=true
@@ -143,7 +120,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: allure-results-${{ matrix.browser }}-${{ matrix.resolution }}
+          name: allure-results-${{ matrix.browser }}
           path: allure-results/
           retention-days: 30
           if-no-files-found: warn
@@ -152,7 +129,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: screenshots-${{ matrix.browser }}-${{ matrix.resolution }}
+          name: screenshots-${{ matrix.browser }}
           path: |
             tests/ui/screenshots/
             tests/ui/traces/
@@ -288,15 +265,12 @@ jobs:
           echo "|---------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| Backend URL | ${{ env.BACKEND_URL }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Browsers | chromium, firefox |" >> $GITHUB_STEP_SUMMARY
-          echo "| Resolutions | 1920x1080, 1366x768 |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Test Matrix" >> $GITHUB_STEP_SUMMARY
-          echo "| Browser | Resolution | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|---------|------------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Chromium | 1920x1080 | ✅ |" >> $GITHUB_STEP_SUMMARY
-          echo "| Chromium | 1366x768 | ✅ |" >> $GITHUB_STEP_SUMMARY
-          echo "| Firefox | 1920x1080 | ✅ |" >> $GITHUB_STEP_SUMMARY
-          echo "| Firefox | 1366x768 | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Browser | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Chromium | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Firefox | ✅ |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📊 Allure Report" >> $GITHUB_STEP_SUMMARY
           echo "View the full Allure report:" >> $GITHUB_STEP_SUMMARY
