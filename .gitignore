@@ -46,3 +46,4 @@ ENV/
 .venv*
 allure-results/
 allure-report/
+allure*
