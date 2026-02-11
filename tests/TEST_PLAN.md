@@ -353,6 +353,20 @@ Tests run automatically on:
 
 ---
 
+## 12. Exit Criteria
+
+The following criteria must be met before the testing phase is considered complete:
+
+1. All test cases have been executed.
+2. All critical and high-priority test cases have passed.
+3. No open critical or high-priority defects remain.
+4. All medium-priority defects have been addressed or deferred with proper approval.
+5. Test coverage meets or exceeds the defined threshold.
+6. Test results and reports have been reviewed and approved by the QA team and stakeholders.
+7. All test artifacts, including test cases, results, and logs, have been documented and archived.
+
+---
+
 ## Appendix A: Page Object Model
 
 ### Upload Invoice Page
